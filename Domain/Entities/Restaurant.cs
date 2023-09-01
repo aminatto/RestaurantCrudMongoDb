@@ -7,12 +7,6 @@ namespace Mongo.Api.Domain.Entities
 {
     public class Restaurant : AbstractValidator<Restaurant>
     {
-        public Restaurant(string id, string name, EKitchen kitchen)
-        {
-            Id = id;
-            Name = name;
-            Kitchen = kitchen;
-        }
 
         public string Id { get; private set; }
 
@@ -23,6 +17,19 @@ namespace Mongo.Api.Domain.Entities
         public Address Address { get; private set; }
 
         public ValidationResult ValidationResult { get; set; }
+
+        public Restaurant(string id, string name, EKitchen kitchen)
+        {
+            Id = id;
+            Name = name;
+            Kitchen = kitchen;
+        }
+
+        public Restaurant(string name, EKitchen kitchen)
+        {
+            Name = name;
+            Kitchen = kitchen;
+        }
 
         public void AssignAddress(Address address)
         {
