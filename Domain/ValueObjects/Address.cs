@@ -54,14 +54,14 @@ namespace Mongo.Api.Domain.ValueObjects
         {
             RuleFor(s => s.State)
                 .NotEmpty().WithMessage("State cannot be empty")
-                .Length(2).WithMessage("State can have a maximum of 2 characters");
+                .Length(2).WithMessage("State must have of 2 characters");
         }
 
         private void ValidatePostalCode()
         {
             RuleFor(pc => pc.PostalCode)
                 .NotEmpty().WithMessage("Postal Code cannot be empty")
-                .Length(8).WithMessage("Postal Code can have a maximum of 8 characters");
+                .Length(8).WithMessage("Postal Code must have 8 characters");
 
         }
 
