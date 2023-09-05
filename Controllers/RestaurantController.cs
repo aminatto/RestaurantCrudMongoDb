@@ -251,7 +251,7 @@ namespace RestaurantCrudMongoDb.Controllers
         {
             var restaurant = _restaurantRepository.GetById(id);
 
-            if(restaurant == null)
+            if (restaurant == null)
                 return NotFound();
 
             (var totalRestaurantRemoved, var totalRatingsRemoved) = _restaurantRepository.Delete(id);
@@ -260,6 +260,26 @@ namespace RestaurantCrudMongoDb.Controllers
                 new
                 {
                     data = $"Total documents removed: {totalRestaurantRemoved} restaurant with {totalRatingsRemoved} ratings."
+                });
+        }
+
+        [HttpGet("restaurant/textsearch")]
+        public async Task<ActionResult> GetRestaurantByTextSearch([FromQuery] string name)
+        {
+            var restaurants = await _restaurantRepository.GetByTextSearch(name);
+
+            var list = restaurants.ToList().Select(x => new RestaurantList
+            {
+                Id = x.Id,
+                Name = x.Name,
+                Kitchen = (int)x.Kitchen,
+                City = x.Address.City,
+            });
+
+            return Ok(
+                new
+                {
+                    data = list
                 });
         }
 

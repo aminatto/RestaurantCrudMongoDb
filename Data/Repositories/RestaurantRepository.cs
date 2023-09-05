@@ -2,6 +2,7 @@
 using Mongo.Api.Domain.Enums;
 using Mongo.Api.Domain.ValueObjects;
 using MongoDB.Driver;
+using MongoDB.Driver.Linq;
 using RestaurantCrudMongoDb.Data.Schemas;
 using RestaurantCrudMongoDb.Domain.ValueObjects;
 using System.Linq.Expressions;
@@ -171,6 +172,20 @@ namespace RestaurantCrudMongoDb.Data.Repositories
             return (resultRestaurant.DeletedCount, resultRatings.DeletedCount);
 
 
+        }
+
+        public async Task<IEnumerable<Restaurant>> GetByTextSearch(string name)
+        {
+            var restaurants = new List<Restaurant>();
+
+            var filter = Builders<RestaurantSchema>.Filter.Text(name);
+
+            await _restaurants
+                .AsQueryable()
+                .Where(x => filter.Inject())
+                .ForEachAsync(d => restaurants.Add(d.ConvertToDomain()));
+
+            return restaurants;
         }
 
     }
