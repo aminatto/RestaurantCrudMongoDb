@@ -5,6 +5,7 @@ using Mongo.Api.Domain.ValueObjects;
 using RestaurantCrudMongoDb.Controllers.Inputs;
 using RestaurantCrudMongoDb.Controllers.Outputs;
 using RestaurantCrudMongoDb.Data.Repositories;
+using RestaurantCrudMongoDb.Domain.ValueObjects;
 using ZstdSharp.Unsafe;
 
 namespace RestaurantCrudMongoDb.Controllers
@@ -99,7 +100,7 @@ namespace RestaurantCrudMongoDb.Controllers
         }
 
         [HttpGet("restaurant")]
-        public ActionResult GetByName([FromQuery]string name)
+        public ActionResult GetByName([FromQuery] string name)
         {
             var restaurants = _restaurantRepository.GetByName(name);
 
@@ -193,6 +194,72 @@ namespace RestaurantCrudMongoDb.Controllers
                 new
                 {
                     data = "Restaurant Edited SuccessFully."
+                });
+        }
+
+        [HttpPatch("restaurant/{id}/rate")]
+        public ActionResult RateRestaurant(string id, [FromBody] RatingInclusion ratingInclusion)
+        {
+            var restaurant = _restaurantRepository.GetByName(id);
+
+            if (restaurant == null)
+                return NotFound();
+
+            var rating = new Rating(ratingInclusion.Stars, ratingInclusion.Comment);
+
+            if (!rating.Validate())
+            {
+                return BadRequest(
+                    new
+                    {
+                        errors = rating.ValidationResult.Errors.Select(x => x.ErrorMessage)
+                    });
+            }
+
+            _restaurantRepository.Rate(id, rating);
+
+            return Ok(
+                new
+                {
+                    data = "Restaurant rated successfully."
+                });
+        }
+
+        [HttpGet("restaurant/top3")]
+        public async Task<ActionResult> GetTop3Restaurants()
+        {
+            var top3 = await _restaurantRepository.GetTop3();
+
+            var list = top3.Select(x => new RestaurantTop3
+            {
+                Id = x.Key.Id,
+                Name = x.Key.Name,
+                Kitchen = (int)x.Key.Kitchen,
+                City = x.Key.Address.City,
+                Stars = x.Value
+            });
+
+            return Ok(
+                new
+                {
+                    data = list
+                });
+        }
+
+        [HttpDelete("restaurant/{id}")]
+        public ActionResult Delete(string id)
+        {
+            var restaurant = _restaurantRepository.GetById(id);
+
+            if(restaurant == null)
+                return NotFound();
+
+            (var totalRestaurantRemoved, var totalRatingsRemoved) = _restaurantRepository.Delete(id);
+
+            return Ok(
+                new
+                {
+                    data = $"Total documents removed: {totalRestaurantRemoved} restaurant with {totalRatingsRemoved} ratings."
                 });
         }
 

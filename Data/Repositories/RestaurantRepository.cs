@@ -3,6 +3,7 @@ using Mongo.Api.Domain.Enums;
 using Mongo.Api.Domain.ValueObjects;
 using MongoDB.Driver;
 using RestaurantCrudMongoDb.Data.Schemas;
+using RestaurantCrudMongoDb.Domain.ValueObjects;
 using System.Linq.Expressions;
 
 namespace RestaurantCrudMongoDb.Data.Repositories
@@ -11,9 +12,12 @@ namespace RestaurantCrudMongoDb.Data.Repositories
     {
         IMongoCollection<RestaurantSchema> _restaurants;
 
+        IMongoCollection<RatingSchema> _ratings;
+
         public RestaurantRepository(MongoDb mongoDB)
         {
             _restaurants = mongoDB.DB.GetCollection<RestaurantSchema>("restaurant");
+            _ratings = mongoDB.DB.GetCollection<RatingSchema>("ratings");
         }
 
         public void Insert(Restaurant restaurant)
@@ -116,6 +120,57 @@ namespace RestaurantCrudMongoDb.Data.Repositories
             var result = _restaurants.UpdateOne(x => x.Id == id, update);
 
             return result.ModifiedCount > 0;
+        }
+
+        public void Rate(string restaurantId, Rating rating)
+        {
+            var document = new RatingSchema
+            {
+                RestaurantId = restaurantId,
+                Stars = rating.Stars,
+                Comment = rating.Comment,
+            };
+
+            _ratings.InsertOne(document);
+        }
+
+        public async Task<Dictionary<Restaurant, double>> GetTop3()
+        {
+            var result = new Dictionary<Restaurant, double>();
+
+            var top3 = _ratings.Aggregate()
+                .Group(x => x.RestaurantId,
+                g => new
+                {
+                    RestaurantId = g.Key,
+                    StarsAverage = g.Average(s => s.Stars)
+                })
+                .SortByDescending(x => x.StarsAverage)
+                .Limit(3);
+
+            await top3.ForEachAsync(x =>
+            {
+                var restaurant = GetById(x.RestaurantId);
+
+                _ratings.AsQueryable()
+                .Where(r => r.RestaurantId == x.RestaurantId)
+                .ToList()
+                .ForEach(r => restaurant.AssignRating(r.ConvertToDomain()));
+
+                result.Add(restaurant, x.StarsAverage);
+            });
+
+            return result;
+        }
+
+        public (long, long) Delete(string restaurantId)
+        {
+            var resultRatings = _ratings.DeleteMany(x => x.RestaurantId == restaurantId);
+            var resultRestaurant = _restaurants.DeleteOne(x => x.Id == restaurantId);
+
+            return (resultRestaurant.DeletedCount, resultRatings.DeletedCount);
+
+
         }
 
     }

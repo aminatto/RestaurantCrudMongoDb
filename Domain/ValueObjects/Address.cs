@@ -65,8 +65,5 @@ namespace Mongo.Api.Domain.ValueObjects
 
         }
 
-
-
-
     }
 }

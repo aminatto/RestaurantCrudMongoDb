@@ -2,6 +2,7 @@
 using FluentValidation.Results;
 using Mongo.Api.Domain.Enums;
 using Mongo.Api.Domain.ValueObjects;
+using RestaurantCrudMongoDb.Domain.ValueObjects;
 
 namespace Mongo.Api.Domain.Entities
 {
@@ -16,6 +17,8 @@ namespace Mongo.Api.Domain.Entities
 
         public Address Address { get; private set; }
 
+        public List<Rating> Ratings { get; private set; }
+
         public ValidationResult ValidationResult { get; set; }
 
         public Restaurant(string id, string name, EKitchen kitchen)
@@ -23,17 +26,24 @@ namespace Mongo.Api.Domain.Entities
             Id = id;
             Name = name;
             Kitchen = kitchen;
+            Ratings = new List<Rating>();
         }
 
         public Restaurant(string name, EKitchen kitchen)
         {
             Name = name;
             Kitchen = kitchen;
+            Ratings = new List<Rating>();
         }
 
         public void AssignAddress(Address address)
         {
             Address = address;
+        }
+
+        public void AssignRating(Rating rating)
+        {
+            Ratings.Add(rating);
         }
 
         public virtual bool Validate()
@@ -60,9 +70,6 @@ namespace Mongo.Api.Domain.Entities
 
             foreach (var error in Address.ValidationResult.Errors)
                 ValidationResult.Errors.Add(error);
-
-
         }
-
     }
 }
